@@ -1,7 +1,9 @@
 require 'bundler'
 Bundler.require
 
+require_relative './block'
 require_relative './kai'
+require_relative './maps/morgantown'
 
 module Makai
   class Window < Gosu::Window
@@ -10,30 +12,50 @@ module Makai
       self.caption = 'Makai'
       @block_images = {}
       @player = Kai.new
-      @player_x = 250
+      @player_x = 5 * 64
       @player_y = 300
+      @window_x = 0
+      @window_y = 0
+      @map = Maps::Morgantown.new
     end
 
     def update
       if Gosu.button_down?(Gosu::KbLeft)
-        @player_x -= 1
-        @player.direction = :left
-        @player.walking = true
+        if @player_x > 0
+          @player_x -= 2
+          @player.direction = :left
+          @player.walking = true
+        end
       elsif Gosu.button_down?(Gosu::KbRight)
-        @player_x += 1
+        @player_x += 2
         @player.direction = :right
         @player.walking = true
       else
         @player.walking = false
       end
+      if @player_x >= (6 * 64)
+        @window_x += 2
+        @player_x -= 2
+      elsif @player_x < (4 * 64)
+        if @window_x > 0
+          @window_x -= 2
+          @player_x += 2
+        end
+      end
     end
 
     def draw
-      block('other/skybox_sidehills').draw(0, -1, 1, 1.3)
-      (0..9).each do |x|
-        draw_block('tiles/dirt_grass', x, 6, 2)
-        draw_block('tiles/dirt',       x, 7, 2)
-        draw_block('tiles/dirt',       x, 8, 2)
+      block(@map.background).draw(0, -1, 1, 1.3)
+      frame_x = (@window_x / 64).floor
+      frame_y = 0
+      @map.tiles[frame_y..(frame_y + 512)].each_with_index do |row, y|
+        tiles = row[frame_x..(frame_x + 10)]
+        next if tiles.nil?
+        tiles.each_with_index do |block, x|
+          x_real = (x * 64) - (@window_x % 64).floor
+          next if block.nil?
+          block(block).draw(x_real, y * 64, 2, 0.5, 0.5)
+        end
       end
       @player.draw(@player_x, @player_y, 3)
     end
@@ -47,11 +69,7 @@ module Makai
     end
 
     def block(name)
-      @block_images[name] || load_block(name)
-    end
-
-    def load_block(name)
-      Gosu::Image.new("images/#{name}.png", tileable: true)
+      Block.get(name)
     end
   end
 end
