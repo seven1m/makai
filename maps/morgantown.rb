@@ -1,25 +1,47 @@
-require_relative '../block'
+# rubocop:disable Style/LineLength
 
 module Makai
   module Maps
     class Morgantown
       def initialize
         @tiles = [
-          [],
-          [nil, nil, nil,                 nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,            'tiles/leaves'],
-          [nil, nil, nil,                 nil, nil, nil, nil, nil, nil, nil, nil, nil, 'tiles/leaves', 'tiles/leaves', 'tiles/leaves'],
-          [nil, nil, nil,                 nil, nil, nil, nil, nil, nil, nil, nil, nil, 'tiles/leaves', 'tiles/leaves', 'tiles/leaves'],
-          [nil, nil, 'tiles/cactus_top',  nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 'tiles/trunk_mid'],
-          [nil, nil, 'tiles/cactus_side', nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 'tiles/trunk_bottom'],
-          ['tiles/dirt_grass'] * 100,
-          ['tiles/dirt'] * 100
+          %w(),
+          %w(.   .   .   .   .   .   .   .   .   .   .   .   .   ll                                                                                                                                                                    ),
+          %w(.   .   .   .   .   .   .   .   .   .   .   .   ll  ll  ll                                                                                                                                                                ),
+          %w(.   .   .   .   .   .   .   .   .   .   .   .   ll  ll  ll                                                                                                                                                                ),
+          %w(.   .   ct  .   .   .   .   .   .   .   .   .   .   tm1                                                                                                                                                                   ),
+          %w(.   .   cs  .   .   .   .   .   .   .   .   .   .   tb                                                                                                                                                                    ),
+          %w(dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg  dg),
+          %w(dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd  dd)
         ]
+        @damage = {}
       end
 
       attr_reader :tiles
 
       def background
         'other/skybox_sidehills'
+      end
+
+      def item(id)
+        {
+          '1' => :pickaxe
+        }[id]
+      end
+
+      BREAK_AMOUNT = 50
+
+      def damage(x, y)
+        y -= 1 if @tiles[y][x] == '.' && !['.', nil].include?(@tiles[y - 1][x])
+        @damage[[x, y]] ||= 0
+        @damage[[x, y]] += 1
+        return if @damage[[x, y]] < BREAK_AMOUNT
+        block = @tiles[y][x]
+        @tiles[y][x] = '.'
+        @damage[[x, y]] = 0
+        if block && block.size == 3
+          item(block[-1])
+        end
       end
     end
   end

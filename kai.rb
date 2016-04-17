@@ -4,10 +4,13 @@ module Makai
       @parts = {}
       @walking = false
       @direction = :right
+      @chopping = false
     end
 
     attr_accessor :walking
     attr_accessor :direction
+    attr_accessor :chopping
+    attr_accessor :item
 
     def draw(x, y, z)
       draw_head(x, y, z + 3)
@@ -33,21 +36,42 @@ module Makai
     end
 
     def draw_arm(x, y, z, mult)
-      part(:arm).draw_rot(x + 16, y + 32, z, angle(mult), 0.5, 0, 0.5, 0.5)
+      part_name = @item && mult == 1 ? "arm_with_#{@item}".to_sym : :arm
+      scale_x = 0.5 * (@direction == :left ? -1 : 1)
+      part(part_name).draw_rot(x + 16, y + 32, z, angle(:arm, mult), 0.5, 0, scale_x, 0.5)
     end
 
     def draw_leg(x, y, z, mult)
-      part(:leg).draw_rot(x + 16, y + 60, z, angle(mult), 0.5, 0, 0.5, 0.5)
+      part(:leg).draw_rot(x + 16, y + 60, z, angle(:leg, mult), 0.5, 0, 0.5, 0.5)
     end
 
-    def angle_frames
-      @angle_frames ||= (-44..45).to_a + (-45..44).to_a.reverse
+    def angle(part, mult)
+      if chopping && part == :arm
+        chopping_angle(mult)
+      elsif walking
+        walking_angle(mult)
+      else
+        0
+      end
     end
 
-    def angle(mult)
-      return 0 unless walking
-      frame = (Gosu.milliseconds / 5 % 180).floor
-      angle_frames[frame] * mult
+    def chopping_frames
+      @chopping_frames ||= (-180..0).to_a
+    end
+
+    def chopping_angle(mult)
+      return 0 if mult == -1 # background hand does nothing
+      frame = (Gosu.milliseconds / 2 % chopping_frames.size).floor
+      chopping_frames[frame] * (direction == :right ? 1 : -1)
+    end
+
+    def walking_frames
+      @walking_frames ||= (-44..45).to_a + (-45..44).to_a.reverse
+    end
+
+    def walking_angle(mult)
+      frame = (Gosu.milliseconds / 5 % walking_frames.size).floor
+      walking_frames[frame] * mult
     end
 
     def part(name)

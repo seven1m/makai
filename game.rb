@@ -20,28 +20,9 @@ module Makai
     end
 
     def update
-      if Gosu.button_down?(Gosu::KbLeft)
-        if @player_x > 0
-          @player_x -= 2
-          @player.direction = :left
-          @player.walking = true
-        end
-      elsif Gosu.button_down?(Gosu::KbRight)
-        @player_x += 2
-        @player.direction = :right
-        @player.walking = true
-      else
-        @player.walking = false
-      end
-      if @player_x >= (6 * 64)
-        @window_x += 2
-        @player_x -= 2
-      elsif @player_x < (4 * 64)
-        if @window_x > 0
-          @window_x -= 2
-          @player_x += 2
-        end
-      end
+      update_travel
+      update_window
+      update_interaction
     end
 
     def draw
@@ -53,7 +34,7 @@ module Makai
         next if tiles.nil?
         tiles.each_with_index do |block, x|
           x_real = (x * 64) - (@window_x % 64).floor
-          next if block.nil?
+          next if block.nil? || block == '.'
           block(block).draw(x_real, y * 64, 2, 0.5, 0.5)
         end
       end
@@ -70,6 +51,54 @@ module Makai
 
     def block(name)
       Block.get(name)
+    end
+
+    def update_travel
+      if Gosu.button_down?(Gosu::KbLeft)
+        if @player_x > 0
+          @player_x -= 2
+          @player.direction = :left
+          @player.walking = true
+        end
+      elsif Gosu.button_down?(Gosu::KbRight)
+        @player_x += 2
+        @player.direction = :right
+        @player.walking = true
+      else
+        @player.walking = false
+      end
+    end
+
+    def update_window
+      if @player_x >= (6 * 64)
+        @window_x += 2
+        @player_x -= 2
+      elsif @player_x < (4 * 64)
+        if @window_x > 0
+          @window_x -= 2
+          @player_x += 2
+        end
+      end
+    end
+
+    def update_interaction
+      if Gosu.button_down?(Gosu::KbSpace)
+        @player.chopping = true
+        x = player_x_block + (@player.direction == :right ? 1 : 0)
+        y = player_y_block + 1
+        item = @map.damage(x, y)
+        @player.item = item if item
+      else
+        @player.chopping = false
+      end
+    end
+
+    def player_x_block
+      (@player_x + @window_x) / 64
+    end
+
+    def player_y_block
+      (@player_y + @window_y) / 64
     end
   end
 end
